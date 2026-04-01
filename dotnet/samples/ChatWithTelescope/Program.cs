@@ -14,7 +14,7 @@ if (string.IsNullOrEmpty(endpoint))
     Console.ResetColor();
     return;
 }
-var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT") ?? "gpt-4o";
+var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT") ?? "gpt-4o-mini";
 
 Console.WriteLine("🔭 Chat With Telescope Sample");
 Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
