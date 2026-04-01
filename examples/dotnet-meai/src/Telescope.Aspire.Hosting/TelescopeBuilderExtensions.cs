@@ -28,6 +28,10 @@ public static class TelescopeBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(name);
 
+        ValidateToolOnPath("tele",
+            "Project Telescope CLI ('tele') was not found on PATH. " +
+            "Install it from: https://github.com/microsoft/project-telescope/releases");
+
         var resource = new TelescopeResource(name);
         if (pipeName is not null)
         {
@@ -50,6 +54,45 @@ public static class TelescopeBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
+        ValidateToolOnPath("telescope-dashboard",
+            "Project Telescope Dashboard ('telescope-dashboard') was not found on PATH. " +
+            "Install it from: https://github.com/microsoft/project-telescope/releases");
+
         return builder.AddExecutable(name, "telescope-dashboard", ".");
+    }
+
+    private static void ValidateToolOnPath(string tool, string errorMessage)
+    {
+        try
+        {
+            var pathVar = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            var separator = OperatingSystem.IsWindows() ? ';' : ':';
+            var extensions = OperatingSystem.IsWindows()
+                ? new[] { ".exe", ".cmd", ".bat" }
+                : Array.Empty<string>();
+
+            foreach (var dir in pathVar.Split(separator, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!Directory.Exists(dir))
+                    continue;
+
+                // Check exact name (Unix) or with extensions (Windows)
+                if (File.Exists(Path.Combine(dir, tool)))
+                    return;
+
+                foreach (var ext in extensions)
+                {
+                    if (File.Exists(Path.Combine(dir, tool + ext)))
+                        return;
+                }
+            }
+        }
+        catch
+        {
+            // If PATH scanning fails, don't block — let Aspire try to run it
+            return;
+        }
+
+        throw new InvalidOperationException(errorMessage);
     }
 }
