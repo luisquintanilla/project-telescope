@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Telescope.Extensions.AI/Telescope.Extensions.AI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Telescope.Extensions.AI.Tests/Telescope.Extensions.AI.Tests.csproj" />
+  </Folder>
+</Solution>
