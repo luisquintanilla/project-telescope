@@ -41,8 +41,9 @@ if (string.IsNullOrEmpty(token))
 }
 var model = builder.Configuration["GitHub:Model"] ?? Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
 
-// Build host to get DI container
-var host = builder.Build();
+// Build and start host — this initializes the OTEL pipeline and exporters
+using var host = builder.Build();
+await host.StartAsync();
 
 Console.WriteLine("🔭 Chat With Telescope Sample");
 Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -100,6 +101,9 @@ if (response.Usage is { } usage)
 
 Console.WriteLine();
 Console.WriteLine("Run 'tele sessions list' or open 'telescope-dashboard' to see the captured events!");
+
+// Graceful shutdown — flushes pending OTLP batches to Aspire Dashboard
+await host.StopAsync();
 
 // --- Tool implementations ---
 [Description("Gets the current weather for a given location")]

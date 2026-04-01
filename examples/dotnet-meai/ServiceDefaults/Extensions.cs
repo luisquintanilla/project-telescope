@@ -25,8 +25,6 @@ public static class Extensions
             http.AddServiceDiscovery();
         });
 
-        builder.Services.AddServiceDiscovery();
-
         return builder;
     }
 
@@ -43,15 +41,19 @@ public static class Extensions
             {
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddMeter("Microsoft.Extensions.AI")
+                    .AddMeter("Experimental.Microsoft.Extensions.AI");
             })
             .WithTracing(tracing =>
             {
-                tracing.AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
+                tracing.AddSource(builder.Environment.ApplicationName)
                     .AddSource("Telescope.Extensions.AI")
                     .AddSource("Microsoft.Extensions.AI")
-                    .AddSource("OpenAI");
+                    .AddSource("Experimental.Microsoft.Extensions.AI")
+                    .AddSource("OpenAI")
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation();
             });
 
         builder.AddOpenTelemetryExporters();
