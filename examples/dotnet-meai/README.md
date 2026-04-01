@@ -6,7 +6,7 @@ A minimal example showing how to integrate .NET AI applications with Project Tel
 
 - **`DelegatingChatClient` middleware** that wraps any M.E.AI `IChatClient`
 - **Automatic event emission:** session lifecycle, turns, tool calls, token usage, errors
-- **Azure OpenAI with managed identity** (`DefaultAzureCredential`)
+- **GitHub Models** — no Azure subscription required, just a GitHub PAT
 - **Function calling with `UseFunctionInvocation()`** — Telescope captures all tool calls
 
 ## Event flow
@@ -27,8 +27,7 @@ SessionStarted → UserMessage → TurnStarted
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Project Telescope installed ([download MSI](https://github.com/microsoft/project-telescope/releases))
-- Azure OpenAI resource with a chat model deployment
-- Azure CLI logged in (`az login`) for `DefaultAzureCredential`
+- A [GitHub personal access token](https://github.com/settings/tokens) (PAT)
 
 ## Quick start
 
@@ -36,8 +35,8 @@ SessionStarted → UserMessage → TurnStarted
 # 1. Start Telescope
 tele service start
 
-# 2. Set your Azure OpenAI endpoint
-set AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+# 2. Set your GitHub token
+set GITHUB_TOKEN=ghp_your_token_here
 
 # 3. Run the example
 cd examples/dotnet-meai
@@ -50,6 +49,8 @@ tele sessions list
 tele turns list <session-id>
 ```
 
+You can optionally set `GITHUB_MODEL` to override the default model (`openai/gpt-4o-mini`).
+
 ## Pipeline architecture
 
 The M.E.AI middleware ordering matters — `TelescopeChatClient` sits outermost so it sees all messages including function calls and results from `FunctionInvokingChatClient`'s internal loop:
@@ -58,7 +59,7 @@ The M.E.AI middleware ordering matters — `TelescopeChatClient` sits outermost 
 IChatClient pipeline:
   TelescopeChatClient (outermost — sees everything)
     → FunctionInvokingChatClient (handles tool loops)
-      → AzureOpenAIChatClient (actual LLM calls)
+      → OpenAIChatClient (GitHub Models)
 ```
 
 ## Configuration
@@ -81,7 +82,7 @@ If Telescope isn't running, the middleware silently skips telemetry — the AI p
 ```
 dotnet-meai/
 ├── src/Telescope.Extensions.AI/  # Minimal middleware library
-├── ChatWithTelescope/            # Sample app (Azure OpenAI + function calling)
+├── ChatWithTelescope/            # Sample app (GitHub Models + function calling)
 ├── DotnetMeaiExample.slnx       # Solution file
 └── nuget.config
 ```

@@ -1,30 +1,32 @@
+using System.ClientModel;
 using System.ComponentModel;
-using Azure.AI.OpenAI;
-using Azure.Identity;
 using Microsoft.Extensions.AI;
+using OpenAI;
 using Telescope.Extensions.AI.ChatCompletion;
 
 // --- Configuration ---
-var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
-if (string.IsNullOrEmpty(endpoint))
+var token = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+if (string.IsNullOrEmpty(token))
 {
     Console.ForegroundColor = ConsoleColor.Red;
-    Console.WriteLine("ERROR: Set the AZURE_OPENAI_ENDPOINT environment variable.");
-    Console.WriteLine("Example: set AZURE_OPENAI_ENDPOINT=https://my-resource.openai.azure.com/");
+    Console.WriteLine("ERROR: Set the GITHUB_TOKEN environment variable.");
+    Console.WriteLine("Create a PAT at: https://github.com/settings/tokens");
     Console.ResetColor();
     return;
 }
-var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT") ?? "gpt-4o-mini";
+var model = Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
 
 Console.WriteLine("🔭 Chat With Telescope Sample");
 Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-Console.WriteLine($"  Endpoint:   {endpoint}");
-Console.WriteLine($"  Deployment: {deployment}");
+Console.WriteLine($"  Provider: GitHub Models");
+Console.WriteLine($"  Model:    {model}");
 Console.WriteLine();
 
-// --- Create Azure OpenAI client ---
-var azureClient = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
-var innerClient = azureClient.GetChatClient(deployment).AsIChatClient();
+// --- Create GitHub Models client ---
+var client = new OpenAIClient(
+    credential: new ApiKeyCredential(token),
+    options: new OpenAIClientOptions { Endpoint = new Uri("https://models.github.ai/inference") });
+var innerClient = client.GetChatClient(model).AsIChatClient();
 
 // --- Build the M.E.AI pipeline ---
 Console.WriteLine("Connecting to Telescope service...");
@@ -77,7 +79,7 @@ if (response.Usage is { } usage)
 }
 
 Console.WriteLine();
-Console.WriteLine("Check the MockTelescopeServer terminal to see the captured events!");
+Console.WriteLine("Run 'tele sessions list' or open 'telescope-dashboard' to see the captured events!");
 
 // --- Tool implementations ---
 [Description("Gets the current weather for a given location")]
