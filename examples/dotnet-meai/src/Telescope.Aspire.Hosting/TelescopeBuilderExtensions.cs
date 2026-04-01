@@ -10,15 +10,23 @@ public static class TelescopeBuilderExtensions
 {
     /// <summary>
     /// Adds a Project Telescope service to the application model.
-    /// Starts <c>tele service start --foreground</c> as a managed executable resource.
+    /// Runs <c>tele service start</c> to ensure the service is running,
+    /// then exposes the named pipe as a connection string for client apps.
     /// </summary>
     /// <param name="builder">The distributed application builder.</param>
     /// <param name="name">The resource name.</param>
     /// <param name="pipeName">Optional custom pipe name (default: "telescope-collector").</param>
     /// <returns>A resource builder for further configuration.</returns>
     /// <remarks>
+    /// <para>
     /// The <c>tele</c> CLI must be installed and available on PATH.
     /// Install Project Telescope from https://github.com/microsoft/project-telescope/releases
+    /// </para>
+    /// <para>
+    /// The Telescope service runs as a background daemon — <c>tele service start</c>
+    /// starts it and exits. If the service is already running, the command is a no-op.
+    /// Use <c>tele status</c> to verify the service state.
+    /// </para>
     /// </remarks>
     public static IResourceBuilder<TelescopeResource> AddTelescope(
         this IDistributedApplicationBuilder builder,
@@ -39,7 +47,7 @@ public static class TelescopeBuilderExtensions
         }
 
         return builder.AddResource(resource)
-            .WithArgs("service", "start", "--foreground");
+            .WithArgs("service", "start");
     }
 
     /// <summary>
