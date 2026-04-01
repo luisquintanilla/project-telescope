@@ -60,9 +60,10 @@ tele turns list <session-id>
 # 1. Start Telescope service
 tele service start
 
-# 2. Store your GitHub token (one-time setup)
+# 2. Store your GitHub token as an Aspire parameter (one-time setup)
 cd examples/dotnet-meai
-dotnet user-secrets --project ChatWithTelescope set "GitHub:Token" "ghp_your_token_here"
+dotnet user-secrets --project AppHost set "Parameters:github-token" "ghp_your_token_here"
+# Or skip this — the Aspire Dashboard will prompt you to enter it
 
 # 3. Run via Aspire AppHost
 dotnet run --project AppHost

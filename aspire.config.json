@@ -1,0 +1,5 @@
+{
+  "appHost": {
+    "path": "examples/dotnet-meai/AppHost/AppHost.csproj"
+  }
+}

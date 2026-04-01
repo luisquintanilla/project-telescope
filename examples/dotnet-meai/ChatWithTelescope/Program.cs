@@ -17,10 +17,14 @@ if (string.IsNullOrEmpty(token))
     Console.ForegroundColor = ConsoleColor.Red;
     Console.WriteLine("ERROR: No GitHub token found.");
     Console.WriteLine();
-    Console.WriteLine("Option 1 — user-secrets (recommended):");
-    Console.WriteLine("  dotnet user-secrets set \"GitHub:Token\" \"ghp_your_token\"");
+    Console.WriteLine("Option 1 — Aspire parameter (when running via AppHost):");
+    Console.WriteLine("  dotnet user-secrets --project AppHost set \"Parameters:github-token\" \"ghp_your_token\"");
+    Console.WriteLine("  (Or enter it in the Aspire Dashboard when prompted)");
     Console.WriteLine();
-    Console.WriteLine("Option 2 — environment variable:");
+    Console.WriteLine("Option 2 — user-secrets (standalone):");
+    Console.WriteLine("  dotnet user-secrets --project ChatWithTelescope set \"GitHub:Token\" \"ghp_your_token\"");
+    Console.WriteLine();
+    Console.WriteLine("Option 3 — environment variable:");
     Console.WriteLine("  set GITHUB_TOKEN=ghp_your_token");
     Console.ResetColor();
     return;
