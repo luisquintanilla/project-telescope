@@ -3,4 +3,5 @@
     <Project Path="src/Telescope.Extensions.AI/Telescope.Extensions.AI.csproj" />
   </Folder>
   <Project Path="ChatWithTelescope/ChatWithTelescope.csproj" />
+  <Project Path="BuggyAgent/BuggyAgent.csproj" />
 </Solution>
