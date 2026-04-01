@@ -4,11 +4,21 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenAI;
-using Telescope.Extensions.AI.ChatCompletion;
 
-// --- Build host with Aspire service defaults ---
+// --- Build host with Aspire service defaults + Telescope client ---
 var builder = Host.CreateApplicationBuilder(args);
 builder.AddServiceDefaults();
+
+// Register Telescope client from Aspire connection string (or default pipe name standalone)
+builder.AddTelescopeClient("telescope", settings =>
+{
+    settings.AgentId = "chat-with-telescope-sample";
+    settings.AgentName = "Chat With Telescope Sample";
+    settings.AgentVersion = "0.1.0";
+    settings.EnableSensitiveData = true;
+    settings.MaxConnectRetries = 2;
+    settings.ConnectTimeout = TimeSpan.FromSeconds(2);
+});
 
 // --- Configuration (user-secrets + env vars already handled by Host builder) ---
 var token = builder.Configuration["GitHub:Token"] ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
@@ -31,6 +41,9 @@ if (string.IsNullOrEmpty(token))
 }
 var model = builder.Configuration["GitHub:Model"] ?? Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
 
+// Build host to get DI container
+var host = builder.Build();
+
 Console.WriteLine("🔭 Chat With Telescope Sample");
 Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 Console.WriteLine($"  Provider: GitHub Models");
@@ -43,22 +56,14 @@ var client = new OpenAIClient(
     options: new OpenAIClientOptions { Endpoint = new Uri("https://models.github.ai/inference") });
 var innerClient = client.GetChatClient(model).AsIChatClient();
 
-// --- Build the M.E.AI pipeline ---
+// --- Build the M.E.AI pipeline using DI-resolved Telescope settings ---
 Console.WriteLine("Connecting to Telescope service...");
-Console.WriteLine("(Run 'tele service start' first, or events will be silently skipped)");
+Console.WriteLine("(Aspire manages Telescope, or run 'tele service start' standalone)");
 Console.WriteLine();
 
 using var pipeline = innerClient
     .AsBuilder()
-    .UseTelescope(options =>
-    {
-        options.AgentId = "chat-with-telescope-sample";
-        options.AgentName = "Chat With Telescope Sample";
-        options.AgentVersion = "0.1.0";
-        options.EnableSensitiveData = true;
-        options.Transport.MaxConnectRetries = 2;
-        options.Transport.ConnectTimeout = TimeSpan.FromSeconds(2);
-    })
+    .UseTelescope(host.Services)
     .UseFunctionInvocation()
     .Build();
 

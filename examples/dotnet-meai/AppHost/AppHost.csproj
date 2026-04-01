@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ChatWithTelescope\ChatWithTelescope.csproj" />
+    <ProjectReference Include="..\src\Telescope.Aspire.Hosting\Telescope.Aspire.Hosting.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
 </Project>
