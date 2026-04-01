@@ -23,3 +23,9 @@ release/
 telescope-linux-x64-tarball.zip
 telescope-linux-x64-zip.zip
 telescope-linux-x64.zip
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
