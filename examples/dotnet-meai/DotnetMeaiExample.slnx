@@ -1,6 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Telescope.Extensions.AI/Telescope.Extensions.AI.csproj" />
+    <Project Path="src/Telescope.Aspire.Hosting/Telescope.Aspire.Hosting.csproj" />
+    <Project Path="src/Telescope.Aspire.Client/Telescope.Aspire.Client.csproj" />
   </Folder>
   <Project Path="ChatWithTelescope/ChatWithTelescope.csproj" />
+  <Project Path="AppHost/AppHost.csproj" />
+  <Project Path="ServiceDefaults/ServiceDefaults.csproj" />
 </Solution>

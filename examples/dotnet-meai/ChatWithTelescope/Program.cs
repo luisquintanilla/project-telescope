@@ -1,17 +1,17 @@
 using System.ClientModel;
 using System.ComponentModel;
-using System.Reflection;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using OpenAI;
 using Telescope.Extensions.AI.ChatCompletion;
 
-// --- Configuration (user-secrets preferred, env vars as fallback) ---
-var config = new ConfigurationBuilder()
-    .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true)
-    .Build();
+// --- Build host with Aspire service defaults ---
+var builder = Host.CreateApplicationBuilder(args);
+builder.AddServiceDefaults();
 
-var token = config["GitHub:Token"] ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+// --- Configuration (user-secrets + env vars already handled by Host builder) ---
+var token = builder.Configuration["GitHub:Token"] ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
 if (string.IsNullOrEmpty(token))
 {
     Console.ForegroundColor = ConsoleColor.Red;
@@ -25,7 +25,7 @@ if (string.IsNullOrEmpty(token))
     Console.ResetColor();
     return;
 }
-var model = config["GitHub:Model"] ?? Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
+var model = builder.Configuration["GitHub:Model"] ?? Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
 
 Console.WriteLine("🔭 Chat With Telescope Sample");
 Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

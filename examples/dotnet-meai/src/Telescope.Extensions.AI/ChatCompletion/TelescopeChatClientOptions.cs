@@ -33,4 +33,11 @@ public sealed class TelescopeChatClientOptions
 
     /// <summary>Whether to capture message content (may contain sensitive data).</summary>
     public bool EnableSensitiveData { get; set; } = false;
+
+    /// <summary>
+    /// Emit OpenTelemetry spans with gen_ai.* semantic conventions.
+    /// Default: true. Zero-cost if no OTEL exporter is configured —
+    /// ActivitySource.StartActivity() returns null when nobody is listening.
+    /// </summary>
+    public bool EmitOpenTelemetrySpans { get; set; } = true;
 }

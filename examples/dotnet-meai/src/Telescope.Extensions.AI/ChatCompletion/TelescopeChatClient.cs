@@ -23,6 +23,8 @@ namespace Telescope.Extensions.AI.ChatCompletion;
 /// </remarks>
 public sealed class TelescopeChatClient : DelegatingChatClient
 {
+    private static readonly ActivitySource s_activitySource = new("Telescope.Extensions.AI", "0.1.0");
+
     private readonly TelescopeChatClientOptions _options;
     private readonly ILogger _logger;
     private readonly TelescopeTransport _transport;
@@ -67,6 +69,23 @@ public sealed class TelescopeChatClient : DelegatingChatClient
             sessionId = _sessionId;
         }
 
+        // --- OTEL: Start turn activity ---
+        using var turnActivity = _options.EmitOpenTelemetrySpans
+            ? s_activitySource.StartActivity("gen_ai.chat", ActivityKind.Client)
+            : null;
+
+        if (turnActivity is not null)
+        {
+            turnActivity.SetTag("gen_ai.system", "telescope");
+            turnActivity.SetTag("gen_ai.operation.name", "chat");
+            turnActivity.SetTag("gen_ai.request.model", options?.ModelId);
+            turnActivity.SetTag("telescope.session.id", sessionId.ToString());
+            turnActivity.SetTag("telescope.turn.id", turnId.ToString());
+            turnActivity.SetTag("telescope.turn.index", turnIndex);
+            turnActivity.SetTag("telescope.agent.id", _options.AgentId);
+            turnActivity.SetTag("telescope.agent.name", _options.AgentName);
+        }
+
         // Emit user message + turn started.
         var lastUserMessage = GetLastUserMessage(messages);
         await EmitSafeAsync(new UserMessageEvent(
@@ -92,6 +111,18 @@ public sealed class TelescopeChatClient : DelegatingChatClient
         catch (Exception ex)
         {
             sw.Stop();
+
+            // OTEL: Record error
+            if (turnActivity is not null)
+            {
+                turnActivity.SetStatus(ActivityStatusCode.Error, ex.Message);
+                turnActivity.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message },
+                }));
+            }
+
             await EmitSafeAsync(new ErrorOccurredEvent(
                 Message: ex.Message,
                 TurnId: turnId,
@@ -119,6 +150,17 @@ public sealed class TelescopeChatClient : DelegatingChatClient
         // Token usage.
         if (response.Usage is { } usage)
         {
+            // OTEL: Add token usage attributes
+            if (turnActivity is not null)
+            {
+                if (usage.InputTokenCount.HasValue)
+                    turnActivity.SetTag("gen_ai.usage.input_tokens", usage.InputTokenCount.Value);
+                if (usage.OutputTokenCount.HasValue)
+                    turnActivity.SetTag("gen_ai.usage.output_tokens", usage.OutputTokenCount.Value);
+                if (usage.TotalTokenCount.HasValue)
+                    turnActivity.SetTag("gen_ai.usage.total_tokens", usage.TotalTokenCount.Value);
+            }
+
             await EmitSafeAsync(new TokenUsageReportedEvent(
                 TurnId: turnId,
                 InputTokens: usage.InputTokenCount.HasValue ? (ulong)usage.InputTokenCount.Value : null,
@@ -132,6 +174,13 @@ public sealed class TelescopeChatClient : DelegatingChatClient
             : null;
 
         var tokensNode = BuildTokensNode(response.Usage);
+
+        // OTEL: Set response model and status
+        if (turnActivity is not null)
+        {
+            turnActivity.SetTag("gen_ai.response.model", response.ModelId);
+            turnActivity.SetStatus(ActivityStatusCode.Ok);
+        }
 
         await EmitSafeAsync(new TurnCompletedEvent(
             SessionId: sessionId,
@@ -167,6 +216,24 @@ public sealed class TelescopeChatClient : DelegatingChatClient
         }
 
         var lastUserMessage = GetLastUserMessage(messages);
+
+        // --- OTEL: Start turn activity for streaming ---
+        var turnActivity = _options.EmitOpenTelemetrySpans
+            ? s_activitySource.StartActivity("gen_ai.chat", ActivityKind.Client)
+            : null;
+
+        if (turnActivity is not null)
+        {
+            turnActivity.SetTag("gen_ai.system", "telescope");
+            turnActivity.SetTag("gen_ai.operation.name", "chat");
+            turnActivity.SetTag("gen_ai.request.model", options?.ModelId);
+            turnActivity.SetTag("telescope.session.id", sessionId.ToString());
+            turnActivity.SetTag("telescope.turn.id", turnId.ToString());
+            turnActivity.SetTag("telescope.turn.index", turnIndex);
+            turnActivity.SetTag("telescope.agent.id", _options.AgentId);
+            turnActivity.SetTag("telescope.agent.name", _options.AgentName);
+        }
+
         await EmitSafeAsync(new UserMessageEvent(
             SessionId: sessionId,
             TurnId: turnId,
@@ -195,6 +262,19 @@ public sealed class TelescopeChatClient : DelegatingChatClient
         catch (Exception ex)
         {
             sw.Stop();
+
+            // OTEL: Record error
+            if (turnActivity is not null)
+            {
+                turnActivity.SetStatus(ActivityStatusCode.Error, ex.Message);
+                turnActivity.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message },
+                }));
+                turnActivity.Dispose();
+            }
+
             await EmitSafeAsync(new ErrorOccurredEvent(
                 Message: ex.Message,
                 TurnId: turnId,
@@ -230,6 +310,19 @@ public sealed class TelescopeChatClient : DelegatingChatClient
             {
                 errorOccurred = true;
                 sw.Stop();
+
+                // OTEL: Record streaming error
+                if (turnActivity is not null)
+                {
+                    turnActivity.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    turnActivity.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection
+                    {
+                        { "exception.type", ex.GetType().FullName },
+                        { "exception.message", ex.Message },
+                    }));
+                    turnActivity.Dispose();
+                }
+
                 await EmitSafeAsync(new ErrorOccurredEvent(
                     Message: ex.Message,
                     TurnId: turnId,
@@ -306,11 +399,28 @@ public sealed class TelescopeChatClient : DelegatingChatClient
 
             if (totalInputTokens.HasValue || totalOutputTokens.HasValue)
             {
+                // OTEL: Add token usage attributes for streaming
+                if (turnActivity is not null)
+                {
+                    if (totalInputTokens.HasValue)
+                        turnActivity.SetTag("gen_ai.usage.input_tokens", totalInputTokens.Value);
+                    if (totalOutputTokens.HasValue)
+                        turnActivity.SetTag("gen_ai.usage.output_tokens", totalOutputTokens.Value);
+                }
+
                 await EmitSafeAsync(new TokenUsageReportedEvent(
                     TurnId: turnId,
                     InputTokens: totalInputTokens.HasValue ? (ulong)totalInputTokens.Value : null,
                     OutputTokens: totalOutputTokens.HasValue ? (ulong)totalOutputTokens.Value : null),
                     cancellationToken).ConfigureAwait(false);
+            }
+
+            // OTEL: Set response model and status for streaming
+            if (turnActivity is not null)
+            {
+                turnActivity.SetTag("gen_ai.response.model", modelId);
+                turnActivity.SetStatus(ActivityStatusCode.Ok);
+                turnActivity.Dispose();
             }
 
             await EmitSafeAsync(new TurnCompletedEvent(
@@ -434,14 +544,26 @@ public sealed class TelescopeChatClient : DelegatingChatClient
                 if (content is FunctionCallContent fcc)
                 {
                     var effectId = DeterministicGuid(fcc.CallId ?? Guid.NewGuid().ToString());
+                    var toolName = fcc.Name ?? "unknown";
                     var argsNode = fcc.Arguments is { Count: > 0 }
                         ? JsonSerializer.SerializeToNode(fcc.Arguments, EventSerializer.Options)
                         : null;
 
+                    // OTEL: Start tool call activity
+                    using var toolActivity = _options.EmitOpenTelemetrySpans
+                        ? s_activitySource.StartActivity($"gen_ai.tool.{toolName}", ActivityKind.Internal)
+                        : null;
+
+                    if (toolActivity is not null)
+                    {
+                        toolActivity.SetTag("gen_ai.tool.name", toolName);
+                        toolActivity.SetTag("telescope.effect.id", effectId.ToString());
+                    }
+
                     await EmitSafeAsync(new ToolCallStartedEvent(
                         TurnId: turnId,
                         EffectId: effectId,
-                        Name: fcc.Name ?? "unknown",
+                        Name: toolName,
                         Arguments: argsNode,
                         SessionId: sessionId),
                         cancellationToken).ConfigureAwait(false);
