@@ -37,7 +37,7 @@ tele service start
 
 # 2. Store your GitHub token (one-time setup)
 cd examples/dotnet-meai
-dotnet user-secrets set "GitHub:Token" "ghp_your_token_here"
+dotnet user-secrets --project ChatWithTelescope set "GitHub:Token" "ghp_your_token_here"
 
 # 3. Run the example
 dotnet run --project ChatWithTelescope
@@ -49,7 +49,7 @@ tele sessions list
 tele turns list <session-id>
 ```
 
-You can optionally set the model: `dotnet user-secrets set "GitHub:Model" "openai/gpt-4o"`
+You can optionally set the model: `dotnet user-secrets --project ChatWithTelescope set "GitHub:Model" "openai/gpt-4o"`
 
 Environment variables (`GITHUB_TOKEN`, `GITHUB_MODEL`) also work as a fallback.
 
@@ -91,4 +91,4 @@ dotnet-meai/
 
 ## Full SDK
 
-For the full SDK with all 56 event types, `IEmbeddingGenerator` support, and test suite, see the [`feature/dotnet-meai-bindings`](https://github.com/microsoft/project-telescope/tree/feature/dotnet-meai-bindings) branch.
+For the full SDK with all 56 event types, `IEmbeddingGenerator` support, and test suite, see the [`feature/dotnet-meai-bindings`](../../tree/feature/dotnet-meai-bindings) branch.
