@@ -89,6 +89,3 @@ dotnet-meai/
 └── nuget.config
 ```
 
-## Full SDK
-
-For the full SDK with all 56 event types, `IEmbeddingGenerator` support, and test suite, see the [`feature/dotnet-meai-bindings`](../../tree/feature/dotnet-meai-bindings) branch.
