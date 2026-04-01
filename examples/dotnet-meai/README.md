@@ -35,11 +35,11 @@ SessionStarted → UserMessage → TurnStarted
 # 1. Start Telescope
 tele service start
 
-# 2. Set your GitHub token
-set GITHUB_TOKEN=ghp_your_token_here
+# 2. Store your GitHub token (one-time setup)
+cd examples/dotnet-meai
+dotnet user-secrets set "GitHub:Token" "ghp_your_token_here"
 
 # 3. Run the example
-cd examples/dotnet-meai
 dotnet run --project ChatWithTelescope
 
 # 4. View events in the Dashboard
@@ -49,7 +49,9 @@ tele sessions list
 tele turns list <session-id>
 ```
 
-You can optionally set `GITHUB_MODEL` to override the default model (`openai/gpt-4o-mini`).
+You can optionally set the model: `dotnet user-secrets set "GitHub:Model" "openai/gpt-4o"`
+
+Environment variables (`GITHUB_TOKEN`, `GITHUB_MODEL`) also work as a fallback.
 
 ## Pipeline architecture
 

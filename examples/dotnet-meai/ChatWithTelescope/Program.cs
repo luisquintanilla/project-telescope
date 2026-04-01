@@ -1,20 +1,31 @@
 using System.ClientModel;
 using System.ComponentModel;
+using System.Reflection;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
 using OpenAI;
 using Telescope.Extensions.AI.ChatCompletion;
 
-// --- Configuration ---
-var token = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+// --- Configuration (user-secrets preferred, env vars as fallback) ---
+var config = new ConfigurationBuilder()
+    .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true)
+    .Build();
+
+var token = config["GitHub:Token"] ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
 if (string.IsNullOrEmpty(token))
 {
     Console.ForegroundColor = ConsoleColor.Red;
-    Console.WriteLine("ERROR: Set the GITHUB_TOKEN environment variable.");
-    Console.WriteLine("Create a PAT at: https://github.com/settings/tokens");
+    Console.WriteLine("ERROR: No GitHub token found.");
+    Console.WriteLine();
+    Console.WriteLine("Option 1 — user-secrets (recommended):");
+    Console.WriteLine("  dotnet user-secrets set \"GitHub:Token\" \"ghp_your_token\"");
+    Console.WriteLine();
+    Console.WriteLine("Option 2 — environment variable:");
+    Console.WriteLine("  set GITHUB_TOKEN=ghp_your_token");
     Console.ResetColor();
     return;
 }
-var model = Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
+var model = config["GitHub:Model"] ?? Environment.GetEnvironmentVariable("GITHUB_MODEL") ?? "openai/gpt-4o-mini";
 
 Console.WriteLine("🔭 Chat With Telescope Sample");
 Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
